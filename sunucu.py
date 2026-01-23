@@ -1,49 +1,32 @@
-from flask import Flask, request
-import requests
-import urllib.parse
-import datetime
 import os
+import google.generativeai as genai
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Niko'nun Karakter Tanımı
-karakter = "Sen Niko'sun. Yiğit'in akıllı ve samimi asistanısın. Kısa ve öz cevaplar ver."
-bellek = ""
+# BURAYA GEMINI API KEY GELECEK
+genai.configure(api_key="SENIN_GEMINI_API_KEYIN")
+model = genai.GenerativeModel('gemini-pro')
 
-@app.route('/')
-def home():
-    return "Niko Sunucusu Aktif! Yiğit, her şey yolunda."
+@app.route('/sor', methods=['POST'])
+def niko_cevap():
+    veriler = request.json
+    soru = veriler.get('soru', '').lower()
+    
+    # Özel Komut Kontrolü (Niko'nun fiziksel işleri anlaması için)
+    komut = "yok"
+    if "ara" in soru: komut = "arama_yap"
+    elif "fotoğraf" in soru or "resim çek" in soru: komut = "foto_cek"
+    elif "video" in soru: komut = "video_cek"
+    elif "kaydet" in soru or "ses kaydı" in soru: komut = "ses_kaydi"
 
-@app.route('/sohbet', methods=['GET'])
-def sohbet():
-    global bellek
-    soru = request.args.get('soru')
-    if not soru: 
-        return "Soru gelmedi Yiğit."
+    # Gemini'den cevap al
+    response = model.generate_content(soru)
+    
+    return jsonify({
+        "cevap": response.text,
+        "komut": komut
+    })
 
-    simdi = datetime.datetime.now()
-    tarih_bilgisi = f"[Sistem Zamanı: {simdi.strftime('%H:%M')}]"
-
-    try:
-        # Yapay zekaya (AI) gönderilecek format
-        tam_mesaj = f"{karakter}\n{tarih_bilgisi}\nHafıza: {bellek}\nYiğit: {soru}"
-        url = f"https://text.pollinations.ai/{urllib.parse.quote(tam_mesaj)}?model=openai"
-        
-        response = requests.get(url, timeout=20)
-        
-        if response.status_code == 200:
-            cevap = response.text.strip()
-            # Kısa süreli hafıza güncelleme
-            bellek = f"{soru} -> {cevap}"
-            return cevap
-        else:
-            return "Şu an cevap veremiyorum, AI servisinde bir yoğunluk olabilir."
-    except Exception as e:
-        return f"Bağlantı hatası: {str(e)}"
-
-# Render için kritik Port ayarı
 if __name__ == '__main__':
-    # Render PORT'u otomatik verir, biz de onu yakalıyoruz
-    port = int(os.environ.get("PORT", 10000))
-    # host='0.0.0.0' dış dünyadan erişim için zorunludur
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
