@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 # BURAYA GEMINI API KEY GELECEK
-genai.configure(api_key="SENIN_GEMINI_API_KEYIN")
+genai.configure(api_key="AIzaSyBKSSNYH1AjKgfg1CzFHbRssaKF10vhVIM")
 model = genai.GenerativeModel('gemini-pro')
 
 @app.route('/sor', methods=['POST'])
@@ -30,3 +30,4 @@ def niko_cevap():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
