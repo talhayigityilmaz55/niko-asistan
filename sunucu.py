@@ -1,33 +1,30 @@
-import os
-import google.generativeai as genai
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# BURAYA GEMINI API KEY GELECEK
-genai.configure(api_key="AIzaSyBKSSNYH1AjKgfg1CzFHbRssaKF10vhVIM")
-model = genai.GenerativeModel('gemini-pro')
+# Ana sayfa (Tarayıcıdan girdiğinde 404 hatası almamak için)
+@app.route('/')
+def home():
+    return "Niko AI Sistemi Aktif ve Calisiyor!"
 
+# Uygulamanın soru soracağı kapı (API)
 @app.route('/sor', methods=['POST'])
-def niko_cevap():
-    veriler = request.json
-    soru = veriler.get('soru', '').lower()
-    
-    # Özel Komut Kontrolü (Niko'nun fiziksel işleri anlaması için)
-    komut = "yok"
-    if "ara" in soru: komut = "arama_yap"
-    elif "fotoğraf" in soru or "resim çek" in soru: komut = "foto_cek"
-    elif "video" in soru: komut = "video_cek"
-    elif "kaydet" in soru or "ses kaydı" in soru: komut = "ses_kaydi"
+def ask():
+    try:
+        data = request.get_json()
+        soru = data.get("soru", "").lower()
+        
+        # Basit Cevap Mantığı
+        if "merhaba" in soru:
+            cevap = "Merhaba efendim, ben Niko. Sizi dinliyorum."
+        elif "ara" in soru:
+            cevap = "Hemen arama komutunu hazırlıyorum."
+        else:
+            cevap = "Mesajınızı aldım, sizin için araştırıyorum."
+            
+        return jsonify({"cevap": cevap})
+    except Exception as e:
+        return jsonify({"hata": str(e)}), 500
 
-    # Gemini'den cevap al
-    response = model.generate_content(soru)
-    
-    return jsonify({
-        "cevap": response.text,
-        "komut": komut
-    })
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
