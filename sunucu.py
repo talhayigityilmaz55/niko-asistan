@@ -1,30 +1,28 @@
+import os  # İşletim sistemi kütüphanesini ekliyoruz
+import google.generativeai as genai
 from flask import Flask, request, jsonify
+
+# API anahtarını kodun içine yazmıyoruz! 
+# Render panelinden tanımlayacağımız "GEMINI_API_KEY" isimli değişkeni çağırıyoruz.
+api_key = os.environ.get("GEMINI_API_KEY")
+
+if not api_key:
+    print("HATA: API anahtarı bulunamadı! Lütfen Render panelinden tanımlayın.")
+
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-pro')
 
 app = Flask(__name__)
 
-# Ana sayfa (Tarayıcıdan girdiğinde 404 hatası almamak için)
-@app.route('/')
-def home():
-    return "Niko AI Sistemi Aktif ve Calisiyor!"
-
-# Uygulamanın soru soracağı kapı (API)
 @app.route('/sor', methods=['POST'])
-def ask():
+def ask_gemini():
     try:
-        data = request.get_json()
-        soru = data.get("soru", "").lower()
-        
-        # Basit Cevap Mantığı
-        if "merhaba" in soru:
-            cevap = "Merhaba efendim, ben Niko. Sizi dinliyorum."
-        elif "ara" in soru:
-            cevap = "Hemen arama komutunu hazırlıyorum."
-        else:
-            cevap = "Mesajınızı aldım, sizin için araştırıyorum."
-            
-        return jsonify({"cevap": cevap})
+        data = request.json
+        soru = data.get("soru", "")
+        response = model.generate_content(soru)
+        return jsonify({"cevap": response.text})
     except Exception as e:
-        return jsonify({"hata": str(e)}), 500
+        return jsonify({"cevap": f"Sunucu hatası: {str(e)}"}), 500
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
